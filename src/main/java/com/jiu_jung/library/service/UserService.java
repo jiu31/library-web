@@ -24,11 +24,8 @@ public class UserService {
     }
 
     public Optional<User> addUser(User user) {
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be null or empty");
-        }
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return Optional.empty(); // 이메일 중복 시 실패 반환
+            throw new IllegalArgumentException("Email is already in use.");
         }
         return Optional.of(userRepository.save(user));
     }
@@ -44,10 +41,10 @@ public class UserService {
     }
 
     public boolean deleteUserById(Long userId) {
-        if (userRepository.existsById(userId)) {
-            userRepository.deleteById(userId);
-            return true;
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("User with ID " + userId + " does not exist.");
         }
-        return false;
+        userRepository.deleteById(userId);
+        return true;
     }
 }

@@ -1,26 +1,22 @@
 package com.jiu_jung.library.controller;
 
 import com.jiu_jung.library.domain.User;
-import com.jiu_jung.library.dto.LoginRequest;
-import com.jiu_jung.library.dto.LoginResponse;
-import com.jiu_jung.library.service.AuthenticationService;
 import com.jiu_jung.library.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
-    private final AuthenticationService authenticationService;
 
-    public UserController(UserService userService, AuthenticationService authenticationService) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.authenticationService = authenticationService;
     }
 
     // GET: Get all users
@@ -37,23 +33,20 @@ public class UserController {
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // POST: Create a new user (Registration)
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
-        Optional<User> newUser = userService.addUser(user);
-        if (newUser.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully.");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email is already in use.");
+    // POST: Create a new user
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        try {
+            userService.addUser(user);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("message", "User registered successfully."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred."));
         }
-    }
-
-    // POST: Login
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        return authenticationService.login(loginRequest)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     // PUT: Update an existing user
@@ -66,10 +59,12 @@ public class UserController {
 
     // DELETE: Delete a user by user ID
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable("userId") Long userId) {
-        if (userService.deleteUserById(userId)) {
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") Long userId) {
+        try {
+            userService.deleteUserById(userId);
             return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 }

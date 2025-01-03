@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Management</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+        }
+        input, button {
+          margin: 5px 0;
+          padding: 5px;
+        }
+        .loan-item {
+          margin-bottom: 10px;
+        }
+        .section {
+          margin-top: 20px;
+          padding: 15px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Loan Management</h1>
+
+<div id="loan-list">
+    <h2>Loans</h2>
+    <!-- Loans will be displayed here -->
+</div>
+
+<div class="section">
+    <h2>Loan a Book</h2>
+    <form id="loan-book-form">
+        <input type="number" id="loan-userId" placeholder="User ID" required />
+        <input type="number" id="loan-bookId" placeholder="Book ID" required />
+        <button type="submit">Loan Book</button>
+    </form>
+</div>
+
+<div class="section">
+    <h2>Return a Book</h2>
+    <form id="return-book-form">
+        <input type="number" id="return-userId" placeholder="User ID" required />
+        <input type="number" id="return-bookId" placeholder="Book ID" required />
+        <button type="submit">Return Book</button>
+    </form>
+</div>
+
+<script>
+    const loanList = document.getElementById('loan-list');
+    const loanBookForm = document.getElementById('loan-book-form');
+    const returnBookForm = document.getElementById('return-book-form');
+
+    // Fetch and display loans
+    function fetchLoans() {
+      fetch('/loan')
+        .then(response => response.json())
+        .then(data => {
+          loanList.innerHTML = '<h2>Loans</h2>';
+          data.forEach(loan => {
+            const div = document.createElement('div');
+            div.className = 'loan-item';
+            div.innerHTML = `
+              <strong>User ID:</strong> ${loan.userId}, <strong>Name:</strong> ${loan.userName}, <strong>Email:</strong> ${loan.userEmail}<br>
+              <strong>Book ID:</strong> ${loan.bookId}, <strong>Title:</strong> ${loan.bookTitle}, <strong>Author:</strong> ${loan.bookAuthor}
+            `;
+            loanList.appendChild(div);
+          });
+        })
+        .catch(err => {
+        alert('Error fetching loans. Please try again later.');
+        console.error('Error fetching loans:', err);
+        });
+    }
+
+    // Loan a book
+    loanBookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('loan-userId').value;
+      const bookId = document.getElementById('loan-bookId').value;
+
+      fetch(`/loan/user/${userId}/book/${bookId}`, {
+        method: 'POST',
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(msg => {
+              throw new Error(msg);
+            });
+          }
+          return response.json();
+        })
+        .then(() => {
+          loanBookForm.reset();
+          fetchLoans();
+        })
+        .catch(err => {
+          alert(`Error: ${err.message}`);
+          console.error('Error loaning book:', err);
+        });
+    });
+
+
+    // Return a book
+    returnBookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('return-userId').value;
+      const bookId = document.getElementById('return-bookId').value;
+
+      fetch(`/loan/user/${userId}/book/${bookId}`, {
+        method: 'DELETE',
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(msg => {
+              throw new Error(msg);
+            });
+          }
+          return response;
+        })
+        .then(() => {
+          returnBookForm.reset();
+          fetchLoans();
+        })
+        .catch(err => {
+          alert(`Error: ${err.message}`);
+          console.error('Error returning book:', err);
+        });
+    });
+
+    // Initial fetch
+    fetchLoans();
+</script>
+</body>
+</html>

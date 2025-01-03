@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+        }
+        input, button, textarea {
+          margin: 5px 0;
+          padding: 5px;
+        }
+        .book-item {
+          margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Book Management</h1>
+<div id="book-list">
+    <h2>Books</h2>
+    <!-- Books will be displayed here -->
+</div>
+
+<h2>Add a New Book</h2>
+<form id="add-book-form">
+    <input type="text" id="title" placeholder="Title" required />
+    <input type="text" id="author" placeholder="Author" required />
+    <button type="submit">Add Book</button>
+</form>
+
+<script>
+    const bookList = document.getElementById('book-list');
+    const addBookForm = document.getElementById('add-book-form');
+
+    function fetchBooks() {
+      fetch('/book')
+        .then(response => response.json())
+        .then(data => {
+          bookList.innerHTML = '<h2>Books</h2>';
+          data.forEach(book => {
+            const div = document.createElement('div');
+            div.className = 'book-item';
+            div.innerHTML = `
+              <strong>ID:</strong> ${book.book_id} - <strong>${book.title}</strong> by ${book.author}
+              <button onclick="deleteBook(${book.book_id})">Delete</button>
+            `;
+            bookList.appendChild(div);
+          });
+        })
+        .catch(err => console.error('Error fetching books:', err));
+    }
+
+    addBookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const author = document.getElementById('author').value;
+
+      fetch('/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author }),
+      })
+        .then(() => {
+          addBookForm.reset();
+          fetchBooks();
+        })
+        .catch(err => console.error('Error adding book:', err));
+    });
+
+    function deleteBook(id) {
+      fetch(`/book/${id}`, { method: 'DELETE' })
+        .then(() => fetchBooks())
+        .catch(err => console.error('Error deleting book:', err));
+    }
+
+    fetchBooks();
+</script>
+</body>
+</html>
