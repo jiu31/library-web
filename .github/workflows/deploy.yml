@@ -34,4 +34,4 @@ jobs:
             --region=asia-northeast1 \
             --allow-unauthenticated \
             --add-cloudsql-instances=celestial-air-455806-v8:asia-northeast1:mysql01 \
-            --set-env-vars=DB_USER=root,DB_PASS=0000,DB_NAME=library,INSTANCE_CONNECTION_NAME=celestial-air-455806:asia-northeast1:mysql01
+            --set-env-vars=DB_USER=root,DB_PASS=${{ secrets.DB_PASS }},DB_NAME=library,INSTANCE_CONNECTION_NAME=celestial-air-455806:asia-northeast1:mysql01
