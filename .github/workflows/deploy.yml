@@ -8,6 +8,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
+    env:
+      PROJECT_ID: celestial-air-455806-v8
+      REPOSITORY_NAME: library-repo-01
+      SQL_NAME: library-mysql-01
+      SERVICE_NAME: library-app
+      REGION: asia-northeast1
+      DB_NAME: library
+      DB_USER: root
 
     steps:
       - name: Checkout code
@@ -23,15 +32,15 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -t asia-docker.pkg.dev/celestial-air-455806-v8/library-repo-01/spring-app:$GITHUB_SHA .
-          docker push asia-docker.pkg.dev/celestial-air-455806-v8/library-repo-01/spring-app:$GITHUB_SHA
+          docker build -t asia-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/spring-app:$GITHUB_SHA .
+          docker push asia-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/spring-app:$GITHUB_SHA
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy jiu-app \
-            --image=asia-docker.pkg.dev/celestial-air-455806-v8/library-repo-01/spring-app:$GITHUB_SHA \
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=asia-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/spring-app:$GITHUB_SHA \
             --platform=managed \
-            --region=asia-northeast1 \
+            --region=${{ env.REGION }} \
             --allow-unauthenticated \
-            --add-cloudsql-instances=celestial-air-455806-v8:asia-northeast1:mysql01 \
-            --set-env-vars=DB_USER=root,DB_PASS=${{ secrets.DB_PASS }},DB_NAME=library,INSTANCE_CONNECTION_NAME=celestial-air-455806:asia-northeast1:mysql01
+            --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:mysql01 \
+            --set-env-vars=DB_USER=${{ env.DB_USER }},DB_PASS=${{ secrets.DB_PASS }},DB_NAME=${{ env.DB_NAME }},INSTANCE_CONNECTION_NAME=${{ env.PROJECT_ID }}:${{ env.REGION }}:${{ env.SQL_NAME }}
